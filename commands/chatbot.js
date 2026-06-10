@@ -3,11 +3,6 @@
 //      Chatbot System with Groq AI (LID Based)
 // ============================================
 
-// ============================================
-//      UZAIR MD BOT — COMMANDS/CHATBOT.JS
-//      Chatbot System with Groq AI (LID Based)
-// ============================================
-
 'use strict';
 
 const axios  = require('axios');
@@ -17,22 +12,19 @@ const db     = require('../database/db');
 const { toSmallCaps } = require('../utils/fonts');
 const { authMiddleware } = require('../middleware/auth');
 
+// Bot names — whatsapp.js se set hoga
 const botNames = new Map();
 const setBotName = (botNum, name) => botNames.set(botNum.replace(/[^0-9]/g,''), name);
-const getBotName = (botNum) => botNames.get(botNum.replace(/[^0-9]/g,'')) || 'UZAIR MD';
+const getBotName = (botNum) => botNames.get(botNum.replace(/[^0-9]/g,'')) || 'UZAIR   MD';
 
-const pendingSetup  = new Map();
+// Pending setup state
+const pendingSetup = new Map();
+
+// Chatbot config — naam aur topic store
 const chatbotConfig = new Map();
 
-// ── API Config ──────────────────────────────
-const getKey = () => {
-  const p1 = 'gsk_eI9PxDTU47D0Ir6Q';
-  const p2 = 'uHBmWGdyb3FYzDj7ss1H';
-  const p3 = '41l4fqjmTifGt8Xj';
-  return p1 + p2 + p3;
-};
-const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
-// ────────────────────────────────────────────
+const GROQ_API_KEY = 'process.env.GROQ_API_KEY';
+const GROQ_URL     = 'https://api.groq.com/openai/v1/chat/completions';
 
 const getSystemPrompt = (botName, topic) =>
 `Tumhara naam "${botName}" hai.
@@ -57,17 +49,17 @@ Kabhi mat kaho ke tum bot ho — hamesha insaan ki tarah baat karo.
 Kabhi bhi doosre mazhab ke alfaz istemal mat karo.
 
 Jab koi developer ya contact pooche toh sirf yeh do:
-${toSmallCaps('developer name')}: UZAIR MD
+${toSmallCaps('developer name')}: UZAIR  MD 
 ${toSmallCaps('contact')}: +923013050530
 ${toSmallCaps('channel')}: https://whatsapp.com/channel/0029VbC8zDPGZNCocXFHDn2z`;
 
 const groqReply = async (userMessage, botName, topic) => {
+  // Busy keyword check - Highest Priority
   if (userMessage.toLowerCase().includes('busy')) {
     return "I am currently busy, will respond in 3 to 4 hours. Please wait.";
   }
 
   const systemPrompt = getSystemPrompt(botName, topic);
-  const key = getKey();
 
   try {
     const res = await axios.post(GROQ_URL, {
@@ -80,7 +72,7 @@ const groqReply = async (userMessage, botName, topic) => {
       temperature: 0.7,
     }, {
       headers: {
-        'Authorization': `Bearer ${key}`,
+        'Authorization': `Bearer ${GROQ_API_KEY}`,
         'Content-Type':  'application/json',
       },
       timeout: 15000,
@@ -101,7 +93,7 @@ const groqReply = async (userMessage, botName, topic) => {
       temperature: 0.7,
     }, {
       headers: {
-        'Authorization': `Bearer ${key}`,
+        'Authorization': `Bearer ${GROQ_API_KEY}`,
         'Content-Type':  'application/json',
       },
       timeout: 15000,
@@ -142,6 +134,7 @@ const chatbotgroup = async (ctx) => {
     return;
   }
 
+  // ON kiya — pehle naam poochna hai
   pendingSetup.set(`${cleanBot}_group`, { step: 'name', name: '', topic: '', from: ctx.from });
   await ctx.reply(`🤖 *${toSmallCaps('group chatbot setup')}*\n\nPlease enter the *name* you want to give this chatbot:`);
   await react('✅');
@@ -169,6 +162,7 @@ const chatbotdm = async (ctx) => {
     return;
   }
 
+  // ON kiya — pehle naam poochna hai
   pendingSetup.set(`${cleanBot}_dm`, { step: 'name', name: '', topic: '', from: ctx.from });
   await ctx.reply(`🤖 *${toSmallCaps('dm chatbot setup')}*\n\nPlease enter the *name* you want to give this chatbot:`);
   await react('✅');
@@ -176,9 +170,11 @@ const chatbotdm = async (ctx) => {
 
 // ─── Setup flow handler ───────────────────────
 const handleSetupFlow = async (sock, msg, from, sender, body, cleanBot, type, isOwner) => {
-  const key   = `${cleanBot}_${type}`;
+  const key = `${cleanBot}_${type}`;
   const setup = pendingSetup.get(key);
   if (!setup) return false;
+
+  // Sirf owner ka message accept karo — baaki sab ke liye khamosh raho
   if (!isOwner) return true;
 
   if (setup.step === 'name') {
@@ -214,6 +210,7 @@ const handleChatbot = async (sock, msg, from, sender, body, botNum, isGroup, isO
   const type     = isGroup ? 'group' : 'dm';
   const key      = `${cleanBot}_${type}`;
 
+  // Setup flow check — agar pending setup hai toh pehle woh complete karo
   if (pendingSetup.has(key)) {
     const handled = await handleSetupFlow(sock, msg, from, sender, body, cleanBot, type, isOwner);
     if (handled) return;
@@ -225,6 +222,7 @@ const handleChatbot = async (sock, msg, from, sender, body, botNum, isGroup, isO
   const botLid   = getLid(botRawId);
   const botPhone = cleanBot;
 
+  // creds.json se LID bhi lo
   let botCredsLid = '';
   try {
     const folders = [
@@ -241,7 +239,9 @@ const handleChatbot = async (sock, msg, from, sender, body, botNum, isGroup, isO
     }
   } catch (e) {}
 
-  const botIds  = new Set([botLid, botPhone, botCredsLid].filter(Boolean));
+  const botIds = new Set([botLid, botPhone, botCredsLid].filter(Boolean));
+
+  // Config lo — naam aur topic (Setup flow se aaye hue data ko priority do)
   const config  = chatbotConfig.get(key) || { name: getBotName(cleanBot), topic: 'General' };
   const botName = config.name;
   const topic   = config.topic;
@@ -249,6 +249,7 @@ const handleChatbot = async (sock, msg, from, sender, body, botNum, isGroup, isO
   if (isGroup) {
     if (!db.getBotChatbot(cleanBot, 'group')) return;
 
+    // Bot khud na reply kare
     const senderLid = getLid(sender);
     if ([...botIds].some(id => senderLid === id || senderLid.includes(id))) return;
 
@@ -257,17 +258,20 @@ const handleChatbot = async (sock, msg, from, sender, body, botNum, isGroup, isO
     const quotedParticipant = getLid(ctxInfo?.participant || '');
     const quotedSenderJid   = ctxInfo?.participant || '';
 
+    // Tag check
     const isTagged = mentioned.some(j => {
       const jLid = getLid(j);
       return [...botIds].some(id => jLid === id || j.includes(id));
     });
 
+    // Reply check
     const isReply = [...botIds].some(id =>
       quotedParticipant === id ||
       quotedParticipant.includes(id) ||
       quotedSenderJid.includes(id)
     );
 
+    // Text mein mention
     const isMentionedInText = [...botIds].some(id =>
       body.includes(id) || body.includes('@' + id)
     );
