@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>UZAIR X ALONE MD BOT</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:'Rajdhani',sans-serif;
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:radial-gradient(ellipse at top,#2a0000 0%,#0d0000 45%,#000 100%);
+  overflow:hidden;
+  position:relative;
+}
+
+/* ── Canvas background ── */
+#bgCanvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+
+/* ── Floating snow/dust particles ── */
+.particle{
+  position:fixed;
+  border-radius:50%;
+  background:#fff;
+  pointer-events:none;
+  z-index:1;
+  animation:fall linear infinite;
+}
+@keyframes fall{
+  0%{transform:translateY(-10px) translateX(0);opacity:0}
+  10%{opacity:1}
+  90%{opacity:.6}
+  100%{transform:translateY(100vh) translateX(var(--dx));opacity:0}
+}
+
+/* ── Container ── */
+.container{
+  position:relative;
+  z-index:2;
+  width:100%;
+  max-width:400px;
+  padding:20px 16px;
+}
+
+/* ── CARD ── */
+.card{
+  background:rgba(12,2,2,0.88);
+  border:1px solid rgba(180,0,0,0.3);
+  border-radius:18px;
+  padding:30px 22px 26px;
+  backdrop-filter:blur(20px);
+  box-shadow:0 0 60px rgba(120,0,0,0.25), 0 20px 60px rgba(0,0,0,0.7);
+  position:relative;
+  overflow:hidden;
+}
+
+/* red glow edge top */
+.card::before{
+  content:'';
+  position:absolute;
+  top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,#cc0000 40%,#ff2222 60%,transparent);
+  box-shadow:0 0 12px #cc0000;
+}
+
+/* ── Bot Name ── */
+.bot-name{
+  font-family:'Rajdhani',sans-serif;
+  font-size:24px;
+  font-weight:700;
+  text-align:center;
+  color:#ff2222;
+  margin-bottom:6px;
+  letter-spacing:1px;
+  text-shadow:0 0 20px rgba(255,30,30,0.6);
+}
+
+/* ── Connect badge ── */
+.connect-badge{
+  text-align:center;
+  color:rgba(255,255,255,.75);
+  font-size:12px;
+  letter-spacing:4px;
+  text-transform:uppercase;
+  margin-bottom:22px;
+  font-family:'Share Tech Mono',monospace;
+}
+
+/* ── Tabs ── */
+.tabs{
+  display:flex;
+  background:rgba(0,0,0,.5);
+  border:1px solid rgba(180,0,0,.2);
+  border-radius:10px;
+  padding:3px;
+  margin-bottom:20px;
+  gap:3px;
+}
+.tab{
+  flex:1;padding:12px 8px;text-align:center;border-radius:8px;
+  cursor:pointer;font-size:14px;font-weight:700;
+  transition:all .25s;color:rgba(255,255,255,.4);
+  border:none;background:transparent;
+  font-family:'Rajdhani',sans-serif;
+}
+.tab.active{
+  background:linear-gradient(135deg,#990000,#cc0000);
+  color:#fff;
+  box-shadow:0 3px 12px rgba(150,0,0,.5);
+}
+
+/* ── Field label ── */
+.field-label{
+  font-size:11px;font-weight:700;
+  color:#cc0000;
+  margin-bottom:10px;
+  letter-spacing:3px;
+  text-transform:uppercase;
+  font-family:'Share Tech Mono',monospace;
+}
+
+/* ── Input ── */
+.input-wrap{position:relative;margin-bottom:16px}
+input[type=tel]{
+  width:100%;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(120,120,120,.3);
+  border-radius:8px;
+  padding:14px 16px;
+  color:rgba(255,255,255,.7);
+  font-family:'Share Tech Mono',monospace;
+  font-size:15px;
+  outline:none;
+  transition:border-color .2s;
+  letter-spacing:1px;
+}
+input[type=tel]:focus{border-color:#cc0000}
+input[type=tel]::placeholder{color:rgba(255,255,255,.25)}
+
+/* ── Terms row ── */
+.terms-row{
+  display:flex;align-items:center;gap:10px;
+  margin-bottom:16px;
+  font-size:12px;
+  color:rgba(255,255,255,.5);
+  font-family:'Share Tech Mono',monospace;
+}
+.terms-row input[type=checkbox]{
+  width:16px;height:16px;
+  accent-color:#cc0000;
+  cursor:pointer;
+}
+.terms-row a{color:rgba(255,255,255,.7);text-decoration:none}
+.terms-row a:hover{color:#ff4444}
+
+/* ── Generate Button ── */
+.btn-gen{
+  width:100%;padding:16px;
+  background:linear-gradient(135deg,#990000,#cc0000);
+  border:none;border-radius:8px;
+  color:#fff;
+  font-family:'Share Tech Mono',monospace;
+  font-size:14px;font-weight:700;
+  cursor:pointer;transition:all .2s;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  margin-bottom:14px;
+  box-shadow:0 4px 20px rgba(150,0,0,.4);
+  letter-spacing:2px;
+  text-transform:uppercase;
+}
+.btn-gen:hover{transform:translateY(-2px);box-shadow:0 6px 25px rgba(200,0,0,.6)}
+.btn-gen:disabled{opacity:.5;cursor:not-allowed;transform:none}
+
+/* ── Code display ── */
+.code-display{
+  width:100%;
+  background:rgba(0,0,0,.4);
+  border:1.5px solid rgba(180,0,0,.3);
+  border-radius:8px;
+  padding:18px;
+  text-align:center;
+  font-family:'Share Tech Mono',monospace;
+  color:rgba(255,255,255,.6);
+  font-size:13px;
+  letter-spacing:3px;
+  min-height:58px;
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:0;
+  text-transform:uppercase;
+  transition:all .3s;
+}
+.code-display.has-code{
+  color:#ff6666;
+  border-color:#cc0000;
+  font-size:28px;
+  letter-spacing:8px;
+  font-weight:700;
+  text-shadow:0 0 20px rgba(255,80,80,.6);
+}
+
+/* ── Copy btn ── */
+.btn-copy{
+  width:100%;padding:13px;
+  background:transparent;
+  border:1.5px solid rgba(180,0,0,.3);
+  border-radius:8px;
+  color:rgba(255,255,255,.5);
+  font-family:'Share Tech Mono',monospace;
+  font-size:13px;font-weight:700;
+  cursor:pointer;transition:all .2s;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  margin-top:10px;
+  letter-spacing:1px;
+}
+.btn-copy:hover{border-color:#cc0000;color:#fff;background:rgba(120,0,0,.2)}
+
+/* ── Status ── */
+.status-msg{margin-top:12px;padding:10px 14px;border-radius:8px;font-size:11px;display:none;text-align:center;font-family:'Share Tech Mono',monospace;letter-spacing:1px}
+.status-msg.error{background:rgba(180,0,0,.1);border:1px solid rgba(180,0,0,.4);color:#ff5555;display:block}
+.status-msg.success{background:rgba(0,120,0,.08);border:1px solid rgba(0,150,0,.3);color:#55ff88;display:block}
+.status-msg.info{background:rgba(180,0,0,.08);border:1px solid rgba(180,0,0,.2);color:#ff9999;display:block}
+
+/* ── Footer ── */
+.footer{margin-top:20px;text-align:center;color:rgba(255,255,255,.15);font-size:10px;letter-spacing:2px;text-transform:uppercase}
+.footer span{color:rgba(180,0,0,.6)}
+
+/* toast */
+.toast{display:none;position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#800000,#cc0000);color:#fff;font-weight:700;font-size:13px;padding:12px 30px;border-radius:50px;z-index:999;white-space:nowrap;box-shadow:0 6px 20px rgba(150,0,0,.6);font-family:'Share Tech Mono',monospace;letter-spacing:1px}
+</style>
+</head>
+<body>
+
+<canvas id="bgCanvas"></canvas>
+
+<div class="container">
+  <div class="card">
+    <div class="bot-name">UZAIR X ALONE MD BOT</div>
+    <div class="connect-badge">CONNECT 100% FREE</div>
+
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('pair')">Pair Code</button>
+      <button class="tab" onclick="switchTab('qr')">QR Code</button>
+    </div>
+
+    <div id="pairSection">
+      <div class="field-label">Enter Target's WhatsApp Number</div>
+      <div class="input-wrap">
+        <input type="tel" id="numberInput" placeholder="94771234567" maxlength="15" inputmode="numeric"/>
+      </div>
+      <div class="terms-row">
+        <input type="checkbox" id="agreeCheck"/>
+        <label for="agreeCheck">I agree to the <a href="#">Terms</a> &amp; <a href="#">Policy</a></label>
+      </div>
+      <button class="btn-gen" id="genBtn" onclick="generateCode()">⬇ GENERATE PAIR CODE</button>
+      <div class="code-display" id="codeBox">YOUR CODE WILL APPEAR HERE</div>
+      <button class="btn-copy" onclick="copyCode()">📋 COPY CODE</button>
+      <div class="status-msg" id="statusMsg"></div>
+    </div>
+
+    <div id="qrSection" style="display:none">
+      <div style="text-align:center;padding:35px 0;color:rgba(255,80,80,.3);font-size:13px;font-family:'Share Tech Mono',monospace;letter-spacing:2px">
+        QR CODE COMING SOON<br><br>PLEASE USE PAIR CODE
+      </div>
+    </div>
+
+    <div class="footer">© 2026 <span>UZAIR X ALONE MD BOT</span> · All Rights Reserved</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Canvas background: floating red dust particles ──
+const canvas = document.getElementById('bgCanvas');
+const ctx = canvas.getContext('2d');
+let W, H, particles = [];
+
+function resize(){
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+function Particle(){
+  this.reset = function(){
+    this.x = Math.random() * W;
+    this.y = Math.random() * H;
+    this.r = Math.random() * 2.2 + 0.4;
+    this.speedY = Math.random() * 0.4 + 0.15;
+    this.speedX = (Math.random() - 0.5) * 0.3;
+    this.opacity = Math.random() * 0.6 + 0.2;
+    this.twinkleSpeed = Math.random() * 0.02 + 0.005;
+    this.twinkleDir = 1;
+    // color: mostly white-ish with occasional red tint
+    const c = Math.random();
+    if(c < 0.15) this.color = `rgba(255,80,80,${this.opacity})`;
+    else if(c < 0.25) this.color = `rgba(200,50,50,${this.opacity})`;
+    else this.color = `rgba(255,255,255,${this.opacity})`;
+  };
+  this.reset();
+  this.y = Math.random() * H; // start spread across screen
+}
+
+for(let i = 0; i < 90; i++) particles.push(new Particle());
+
+// Radial glow orbs
+const orbs = [
+  {x:0.15, y:0.1, r:200, color:'rgba(100,0,0,0.18)', dx:0.0003, dy:0.0002},
+  {x:0.85, y:0.85, r:180, color:'rgba(80,0,0,0.15)', dx:-0.0002, dy:-0.0003},
+  {x:0.5, y:0.5, r:150, color:'rgba(60,0,0,0.1)', dx:0.0002, dy:-0.0002},
+];
+let t = 0;
+
+function draw(){
+  ctx.clearRect(0, 0, W, H);
+
+  // Draw orbs
+  orbs.forEach(o => {
+    const ox = (o.x + Math.sin(t * o.dx * 1000) * 0.08) * W;
+    const oy = (o.y + Math.cos(t * o.dy * 1000) * 0.08) * H;
+    const grad = ctx.createRadialGradient(ox, oy, 0, ox, oy, o.r);
+    grad.addColorStop(0, o.color);
+    grad.addColorStop(1, 'transparent');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(ox, oy, o.r, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // Draw particles
+  particles.forEach(p => {
+    // twinkle
+    p.opacity += p.twinkleSpeed * p.twinkleDir;
+    if(p.opacity > 0.85 || p.opacity < 0.1) p.twinkleDir *= -1;
+
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    // re-apply opacity
+    const base = p.color.replace(/[\d.]+\)$/, p.opacity + ')');
+    ctx.fillStyle = base;
+    ctx.fill();
+
+    p.x += p.speedX;
+    p.y += p.speedY;
+
+    if(p.y > H + 5 || p.x < -5 || p.x > W + 5){
+      p.y = -5;
+      p.x = Math.random() * W;
+      p.opacity = Math.random() * 0.6 + 0.2;
+    }
+  });
+
+  t++;
+  requestAnimationFrame(draw);
+}
+draw();
+
+// ── Bot logic ──
+let currentCode = '';
+
+function switchTab(tab){
+  document.querySelectorAll('.tab').forEach((t,i) =>
+    t.classList.toggle('active', (i===0 && tab==='pair') || (i===1 && tab==='qr'))
+  );
+  document.getElementById('pairSection').style.display = tab==='pair' ? 'block' : 'none';
+  document.getElementById('qrSection').style.display = tab==='qr' ? 'block' : 'none';
+}
+
+async function generateCode(){
+  const number = document.getElementById('numberInput').value.replace(/[^0-9]/g,'');
+  const agree = document.getElementById('agreeCheck').checked;
+  const box = document.getElementById('codeBox');
+  const btn = document.getElementById('genBtn');
+  if(!agree){ showStatus('❌ Terms & Policy pe agree karo pehle!','error'); return; }
+  if(!number || number.length < 10){ showStatus('❌ Valid number daalo with country code!','error'); return; }
+  btn.disabled = true; btn.innerHTML = '⏳ GENERATING...';
+  box.className = 'code-display'; box.textContent = 'CONNECTING TO WHATSAPP...';
+  currentCode = '';
+  try{
+    showStatus('⏳ WhatsApp se connect ho raha hai...','info');
+    const res = await fetch(`/pair?number=${number}`);
+    const data = await res.json();
+    if(data.error) throw new Error(data.error);
+    currentCode = data.code;
+    box.className = 'code-display has-code';
+    box.textContent = data.code;
+    showStatus('✅ Code mil gaya! WhatsApp mein enter karo!','success');
+  } catch(err){
+    showStatus('❌ ' + err.message,'error');
+    box.textContent = 'YOUR CODE WILL APPEAR HERE';
+  }
+  btn.disabled = false; btn.innerHTML = '⬇ GENERATE PAIR CODE';
+}
+
+function copyCode(){
+  if(!currentCode){ showStatus('❌ Pehle code generate karo!','error'); return; }
+  navigator.clipboard.writeText(currentCode).then(() => showToast('✓ CODE COPIED!'));
+}
+
+function showStatus(msg, type){
+  const el = document.getElementById('statusMsg');
+  el.textContent = msg; el.className = 'status-msg ' + type;
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 2000);
+}
+
+document.getElementById('numberInput').addEventListener('keydown', e => {
+  if(e.key === 'Enter') generateCode();
+});
+</script>
+</body>
+</html>
+
+
